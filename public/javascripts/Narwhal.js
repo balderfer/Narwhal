@@ -1,6 +1,7 @@
-const narwhalAccel = 500.0;
+const narwhalAccel = 700.0;
 const maxVelX = 200.0;
 const maxVelY = 200.0;
+const animationDuration = 30.0;
 
 var swimAnimation = 0;
 
@@ -11,6 +12,9 @@ var narwhalChar = function () {
     this.scale = 1;
     this.width = 180;
     this.height = 60;
+
+    this.up = false;
+    this.down = false;
 
     this.xVelo = narwhalAccel;
     this.yVelo = 0.0;
@@ -29,16 +33,16 @@ function drawNarwhal() {
     ctx.translate(narwhal.x, narwhal.y);
     ctx.rotate(narwhal.rotation*Math.PI/180);
     //ctx.drawImage(narwhalSwimming[swimAnimation], (-narwhal.width/2), (-narwhal.height/2), narwhal.width, narwhal.height);
-    if(pressed && narwhal.yVelo > 0 && narwhal.underwater) {
+    if(narwhal.underwater) {//pressed && narwhal.yVelo > 0 &&
         ctx.globalAlpha = .8;
         ctx.drawImage(narwhalSpriteSheet, (parseInt(swimAnimation%3))*180 + 1, 0, 180, 60, (-narwhal.width/2), (-narwhal.height/2), narwhal.width, narwhal.height);
         ctx.globalAlpha = 1.0;
     }
-    else if(narwhal.underwater) {
+    /*else if(narwhal.underwater) {
         ctx.globalAlpha = .8;
         ctx.drawImage(narwhalSpriteSheet, 181, 0, 180, 60, (-narwhal.width/2), (-narwhal.height/2), narwhal.width, narwhal.height);
         ctx.globalAlpha = 1.0;
-    }
+    }*/
     else {
         if(swimAnimation%5 > 2)
             ctx.drawImage(narwhalSpriteSheet, (parseInt(swimAnimation%5) - 2)*180 + 1, 60, 180, 60, (-narwhal.width/2), (-narwhal.height/2), narwhal.width, narwhal.height);
@@ -66,8 +70,7 @@ function updateNarwhal(delta) {
         narwhal.yVelo += (narwhalAccel/2) * delta;
     }
     else {//underwater velocity
-        narwhal.yVelo -= (narwhalAccel/2) * delta;
-        if(pressed) {
+        /*if(pressed) {
             narwhal.yVelo += (narwhalAccel/6) * delta;
             if(narwhal.yVelo < 0) {
                 narwhal.yVelo += (narwhalAccel/5) * delta;
@@ -75,7 +78,7 @@ function updateNarwhal(delta) {
         }
         else if(narwhal.yVelo > 0) {
             narwhal.yVelo -= (narwhalAccel/5) * delta;
-        }
+        }*/
     }
 
     //Is it underwater?
@@ -109,22 +112,20 @@ function updateNarwhal(delta) {
         cloudX2 = -screenWidth;
     }
 
-    if(narwhal.underwater)
-        swimAnimation += 6*delta;
+    if(narwhal.underwater) {
+        if(pressed) {
+            swimAnimation += animationDuration*delta;
+            if(narwhal.yVelo > 0)
+                narwhal.yVelo += (narwhalAccel/6) * delta;
+            else if(narwhal.yVelo > 0)
+                narwhal.yVelo -= (narwhalAccel/6) * delta;
+            }
+        else {
+            //if(swimAnimation > 0)
+            //    swimAnimation -= (animationDuration/4)*delta;
+            sideScrollY -= (narwhalAccel/2) * delta;
+        }
+    }
     else
         swimAnimation += 12*delta;
-
-    /*if(narwhal.underwater) {
-        //update animation
-        if (swimAnimationOther) {
-            swimAnimation++;
-            if (swimAnimation > 3) {
-                swimAnimation = 0;
-            }
-            swimAnimationOther = false;
-        }
-        else {
-            swimAnimationOther = true;
-        }
-    }*/
 }

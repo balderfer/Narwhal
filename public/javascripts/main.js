@@ -27,6 +27,8 @@ var mostPoints = 0;
 
 //image variables
 var boatImage;
+var seaweedImage;
+var fishToRightImage;
 var backgroundImage;
 var birdSpriteSheet;
 var explodeSpriteSheet;
@@ -39,6 +41,7 @@ var bubbleCounter = 0.0;
 var birdCounter = 0.0;
 var boatCounter = 0.0;
 
+var stuckNarwhal;
 var deadNarwhal;
 
 var cloudX1 = 0;
@@ -97,6 +100,10 @@ function loadImages() {
     boatImage.src = '../images/boat.png';
     explodeSpriteSheet = new Image();
     explodeSpriteSheet.src = '../images/explosion.png';
+    seaweedImage = new Image();
+    seaweedImage.src = '../images/seaweed.png';
+    fishToRightImage = new Image();
+    fishToRightImage.src = '../images/fishToRight.png';
 }
 
 function reset_game() {
@@ -166,13 +173,13 @@ function drawClouds() {
 }
 
 function drawBackground() {
-    var spaceGradient = ctx.createLinearGradient(0, -sideScrollY - gameHeight*2 + narwhal.y, screenWidth, gameHeight*2 - gameHeight/2 - sideScrollY + narwhal.y);
+    var spaceGradient = ctx.createLinearGradient(0, -sideScrollY*2 - gameHeight*2 + narwhal.y, screenWidth, -sideScrollY - gameHeight/2 + narwhal.y);
 
     spaceGradient.addColorStop(0.125,"#000030");
     spaceGradient.addColorStop(1,"#7ec0ee");
 
     ctx.fillStyle = spaceGradient;
-    ctx.fillRect(0, -sideScrollY - gameHeight*2 + narwhal.y, screenWidth, gameHeight*2 - gameHeight/2 - sideScrollY + narwhal.y);
+    ctx.fillRect(0, -sideScrollY - gameHeight*2 + narwhal.y, screenWidth, -sideScrollY - gameHeight/2 + narwhal.y);
 
     var skyGradient = ctx.createLinearGradient(0, -sideScrollY - gameHeight/2 + narwhal.y , 0, gameHeight/2 + sideScrollY + narwhal.y);
 
@@ -182,7 +189,7 @@ function drawBackground() {
     ctx.fillStyle = skyGradient;
     ctx.fillRect(0, -sideScrollY - gameHeight/2 + narwhal.y, screenWidth, gameHeight/2 - sideScrollY + narwhal.y);
 
-    var oceanGradient = ctx.createLinearGradient(0, -sideScrollY + narwhal.y, 0, -sideScrollY + gameHeight/2);
+    var oceanGradient = ctx.createLinearGradient(0, -sideScrollY + narwhal.y, 0, -sideScrollY + gameHeight/2 + narwhal.y);
 
     oceanGradient.addColorStop(0,"#2a7eb4");
     oceanGradient.addColorStop(1,"#000037");
@@ -190,11 +197,14 @@ function drawBackground() {
     ctx.fillStyle = oceanGradient;
     ctx.fillRect(0, -sideScrollY + narwhal.y, screenWidth, -sideScrollY + gameHeight);
 
-    var currentWaveAnimation = parseInt(waveAnimation);
-
+    //THE FISH
+    ctx.drawImage(fishToRightImage, -cloudX1, -sideScrollY + (narwhal.y) + gameHeight/2 - 300, screenWidth, 100);
+    ctx.drawImage(fishToRightImage, -cloudX2, -sideScrollY + (narwhal.y) + gameHeight/2 - 300, screenWidth, 100);
     //THE FLOOR!!!!
+    ctx.drawImage(seaweedImage, -cloudX1, -sideScrollY + (narwhal.y) + gameHeight/2 - 140, screenWidth, 140);
+    ctx.drawImage(seaweedImage, -cloudX2, -sideScrollY + (narwhal.y) + gameHeight/2 - 140, screenWidth, 140);
 
-
+    var currentWaveAnimation = parseInt(waveAnimation);
     for(var i = 0; i < (gameWidth/45) + 1;i++){
         ctx.globalAlpha = 0.6;
         ctx.drawImage(waveSpriteSheet,((5-(currentWaveAnimation+2)%6))*60, 0, 60, 60,-sideScrollX%45 + i*45, -sideScrollY + (narwhal.y) - 44 , 45, 45);
@@ -299,7 +309,7 @@ function checkCollisions() {
     for(var i = 0; i < numberOfBoats; i++) {
         if(boats[i].alive) {
             //xbounds
-            if(narwhal.x + narwhal.width > boats[i].x - sideScrollX && narwhal.x - narwhal.width < boats[i].x - sideScrollX) {
+            if(narwhal.x + narwhal.width * (3.0/2.0) > boats[i].x - sideScrollX && narwhal.x - narwhal.width * (3.0/2.0) < boats[i].x - sideScrollX) {
                 //rough y bounds
                 if(narwhal.y + narwhal.height * (3.0/2.0) > boats[i].y - sideScrollY && narwhal.y - narwhal.height * (3.0/2.0) < boats[i].y - sideScrollY) {
                     //console.log("Collision fired");
@@ -326,8 +336,8 @@ function checkCollisions() {
     }
 }
 
-canvas.addEventListener('keydown', this.keyPressed , false);
-canvas.addEventListener('keyup', this.keyReleased , false);
+window.addEventListener('keydown', this.keyPressed , false);
+window.addEventListener('keyup', this.keyReleased , false);
 
 canvas.addEventListener('mousedown', this.mousePressed, false);
 canvas.addEventListener('mouseup', this.mouseReleased, false);

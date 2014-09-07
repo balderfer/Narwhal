@@ -12,7 +12,7 @@ var boat = function (living) {
     this.deadAnimation = 0;
 
     this.x = screenWidth + sideScrollX;
-    this.y = screenHeight/2;
+    this.y = 30;
 
     this.alive = living;
     this.recentlyDead = false;
