@@ -17,7 +17,7 @@ var narwhalChar = function () {
 
     this.rotation = 0.0;
 
-    this.x = (canvas.width / 4) - this.width/2;
+    this.x = (canvas.width / 2) - this.width/2 - (canvas.width / 6);
     this.y = canvas.height/2 - this.height/2;
 
     this.underwater = false;
@@ -29,29 +29,38 @@ function drawNarwhal() {
     //ctx.drawImage(narwhalSwimming[swimAnimation], (-narwhal.width/2), (-narwhal.height/2), narwhal.width, narwhal.height);
     if(pressed && narwhal.yVelo > 0 && narwhal.underwater) {
         ctx.globalAlpha = .8;
-        ctx.drawImage(narwhalSpriteSheet, (parseInt(swimAnimation%3))*60 + 1, 0, 60, 20, (-narwhal.width/2), (-narwhal.height/2), narwhal.width, narwhal.height);
+        ctx.drawImage(narwhalSpriteSheet, (parseInt(swimAnimation%3))*180 + 1, 0, 180, 60, (-narwhal.width/2), (-narwhal.height/2), narwhal.width, narwhal.height);
         ctx.globalAlpha = 1.0;
     }
     else if(narwhal.underwater) {
         ctx.globalAlpha = .8;
-        ctx.drawImage(narwhalSpriteSheet, 61, 0, 60, 20, (-narwhal.width/2), (-narwhal.height/2), narwhal.width, narwhal.height);
+        ctx.drawImage(narwhalSpriteSheet, 181, 0, 180, 60, (-narwhal.width/2), (-narwhal.height/2), narwhal.width, narwhal.height);
         ctx.globalAlpha = 1.0;
     }
     else {
         if(swimAnimation%5 > 2)
-            ctx.drawImage(narwhalSpriteSheet, (parseInt(swimAnimation%5) - 2)*60 + 1, 20, 60, 20, (-narwhal.width/2), (-narwhal.height/2), narwhal.width, narwhal.height);
+            ctx.drawImage(narwhalSpriteSheet, (parseInt(swimAnimation%5) - 2)*180 + 1, 60, 180, 60, (-narwhal.width/2), (-narwhal.height/2), narwhal.width, narwhal.height);
         else
-            ctx.drawImage(narwhalSpriteSheet, (parseInt(swimAnimation%5))*60 + 1, 40, 60, 20, (-narwhal.width/2), (-narwhal.height/2), narwhal.width, narwhal.height);
+            ctx.drawImage(narwhalSpriteSheet, (parseInt(swimAnimation%5))*180 + 1, 120, 180, 60, (-narwhal.width/2), (-narwhal.height/2), narwhal.width, narwhal.height);
     }
     ctx.rotate(-narwhal.rotation*Math.PI/180);
     ctx.translate(-narwhal.x, -narwhal.y);
+}
+
+function hitBird() {
+    if(narwhal.yVelo < 0) {
+        narwhal.yVelo -= narwhalAccel/100;
+    }
+    else if(narwhal.yVelo > 0) {
+        narwhal.yVelo += narwhalAccel/100;
+    }
 }
 
 function updateNarwhal(delta) {
     //above water velo
     if(!narwhal.underwater) {
         if (narwhal.yVelo < 0)
-            narwhal.yVelo += (narwhalAccel/4) * delta;
+            narwhal.yVelo += (narwhalAccel/6) * delta;
         narwhal.yVelo += (narwhalAccel/2) * delta;
     }
     else {//underwater velocity
@@ -59,18 +68,17 @@ function updateNarwhal(delta) {
         if(pressed) {
             narwhal.yVelo += (narwhalAccel/6) * delta;
             if(narwhal.yVelo < 0) {
-                narwhal.yVelo += (narwhalAccel/6) * delta;
+                narwhal.yVelo += (narwhalAccel/5) * delta;
             }
         }
         else if(narwhal.yVelo > 0) {
-            narwhal.yVelo -= (narwhalAccel/4) * delta;
+            narwhal.yVelo -= (narwhalAccel/5) * delta;
         }
     }
 
     //Is it underwater?
     if(!narwhal.underwater && sideScrollY > 0) {
         narwhal.underwater = true;
-        narwhal.potentialAccel = narwhal.yVelo/50;
     }
     if(narwhal.underwater && sideScrollY < 0) {
         narwhal.underwater = false;
@@ -83,6 +91,17 @@ function updateNarwhal(delta) {
     //update narwhal position
     sideScrollX += narwhal.xVelo * delta;
     sideScrollY += narwhal.yVelo * delta;
+
+    //UPDATE CLOUDS LOL y here?!
+    cloudX1 += narwhal.xVelo * delta;
+    cloudX2 += narwhal.xVelo * delta;
+    if(cloudX1 > screenWidth) {
+        cloudY1 = -1500 + Math.random()*screenHeight/8;
+        cloudX1 = -screenWidth;
+    } else if(cloudX2 > screenWidth) {
+        cloudY2 = -1500 + Math.random()*screenHeight/8;
+        cloudX2 = -screenWidth;
+    }
 
     if(narwhal.underwater)
         swimAnimation += 6*delta;
