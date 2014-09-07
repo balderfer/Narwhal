@@ -21,6 +21,8 @@ var narwhalChar = function () {
     this.y = canvas.height/2 - this.height/2;
 
     this.underwater = false;
+
+    this.alive = true;
 }
 
 function drawNarwhal() {
@@ -49,18 +51,18 @@ function drawNarwhal() {
 
 function hitBird() {
     if(narwhal.yVelo < 0) {
-        narwhal.yVelo -= narwhalAccel/100;
+        narwhal.yVelo -= narwhalAccel/10;
     }
     else if(narwhal.yVelo > 0) {
-        narwhal.yVelo += narwhalAccel/100;
+        narwhal.yVelo += narwhalAccel/10;
     }
 }
 
 function updateNarwhal(delta) {
     //above water velo
     if(!narwhal.underwater) {
-        if (narwhal.yVelo < 0)
-            narwhal.yVelo += (narwhalAccel/6) * delta;
+        if (narwhal.yVelo > 0)
+            narwhal.yVelo -= (narwhalAccel/6) * delta;
         narwhal.yVelo += (narwhalAccel/2) * delta;
     }
     else {//underwater velocity
@@ -87,6 +89,10 @@ function updateNarwhal(delta) {
     //update narwhal rotation
     narwhal.rotation = (narwhal.yVelo / 300) * 30;
 
+    if(narwhal.rotation > 80)
+        narwhal.rotation = 80;
+    if(narwhal.rotation < -80)
+        narwhal.rotation = -80;
 
     //update narwhal position
     sideScrollX += narwhal.xVelo * delta;

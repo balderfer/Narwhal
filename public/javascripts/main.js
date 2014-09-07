@@ -2,6 +2,8 @@ var canvas = document.createElement("canvas");
 var ctx;
 
 var screenWidth = window.innerWidth;
+if(screenWidth > 1000)
+    screenWidth = 1000;
 var screenHeight = window.innerHeight;
 console.log(screenWidth + ', ' + screenHeight);
 
@@ -24,8 +26,10 @@ var waveSpriteSheet;
 var mostPoints = 0;
 
 //image variables
+var boatImage;
 var backgroundImage;
 var birdSpriteSheet;
+var explodeSpriteSheet;
 var narwhalSpriteSheet;
 
 var framecount = 0;
@@ -33,6 +37,9 @@ var framecount = 0;
 var narwhal;
 var bubbleCounter = 0.0;
 var birdCounter = 0.0;
+var boatCounter = 0.0;
+
+var deadNarwhal;
 
 var cloudX1 = 0;
 var cloudX2 = screenWidth;
@@ -64,6 +71,10 @@ function init() {
         birds[i] = new bird(false,0);
     }
 
+    for(var i = 0; i < numberOfBoats; i++) {
+        boats[i] = new boat(false);
+    }
+
     reset_game();
 
      narwhalSpriteSheet.onload = function() {
@@ -82,6 +93,10 @@ function loadImages() {
     cloudImage2.src = '../images/clouds2.png';
     birdSpriteSheet = new Image();
     birdSpriteSheet.src = '../images/seagull.png';
+    boatImage = new Image();
+    boatImage.src = '../images/boat.png';
+    explodeSpriteSheet = new Image();
+    explodeSpriteSheet.src = '../images/explosion.png';
 }
 
 function reset_game() {
@@ -89,6 +104,7 @@ function reset_game() {
     paused = false;
 
     score = 0;
+    deadNarwhal = -1;
 
     narwhal = new narwhalChar();
 
@@ -132,7 +148,8 @@ function render() {
 
     drawBirds();
 
-    drawNarwhal();
+    if(narwhal.alive)
+        drawNarwhal();
 
     drawClouds();
 
@@ -149,7 +166,7 @@ function drawClouds() {
 }
 
 function drawBackground() {
-    var spaceGradient = ctx.createLinearGradient(0, -sideScrollY - gameHeight/2 + narwhal.y , 0, gameHeight/2 + sideScrollY + narwhal.y);
+    var spaceGradient = ctx.createLinearGradient(0, -sideScrollY - gameHeight*2 + narwhal.y, screenWidth, gameHeight*2 - gameHeight/2 - sideScrollY + narwhal.y);
 
     spaceGradient.addColorStop(0.125,"#000030");
     spaceGradient.addColorStop(1,"#7ec0ee");
@@ -159,7 +176,7 @@ function drawBackground() {
 
     var skyGradient = ctx.createLinearGradient(0, -sideScrollY - gameHeight/2 + narwhal.y , 0, gameHeight/2 + sideScrollY + narwhal.y);
 
-    skyGradient.addColorStop(0.125,"#7ec0ee");
+    skyGradient.addColorStop(0,"#7ec0ee");
     skyGradient.addColorStop(1,"#ecf0f1");
 
     ctx.fillStyle = skyGradient;
@@ -171,15 +188,20 @@ function drawBackground() {
     oceanGradient.addColorStop(1,"#000037");
 
     ctx.fillStyle = oceanGradient;
-    ctx.fillRect(0, -sideScrollY + narwhal.y, screenWidth, -sideScrollY + (gameHeight/2));
+    ctx.fillRect(0, -sideScrollY + narwhal.y, screenWidth, -sideScrollY + gameHeight);
 
     var currentWaveAnimation = parseInt(waveAnimation);
+
+    //THE FLOOR!!!!
+
 
     for(var i = 0; i < (gameWidth/45) + 1;i++){
         ctx.globalAlpha = 0.6;
         ctx.drawImage(waveSpriteSheet,((5-(currentWaveAnimation+2)%6))*60, 0, 60, 60,-sideScrollX%45 + i*45, -sideScrollY + (narwhal.y) - 44 , 45, 45);
         ctx.globalAlpha = 1.0;
     }
+
+    drawBoats();
 
     //drawing waves
     for(var i = 0; i < (gameWidth/30) + 1;i++){
@@ -188,6 +210,11 @@ function drawBackground() {
 }
 
 function update(delta) {
+    if(deadNarwhal != -1) {
+        if(!boats[deadNarwhal].recentlyDead)
+            reset_game();
+    }
+
     //console.log("Update the narwhal! It's y: "+ sideScrollY);
     updateNarwhal(delta);
 
@@ -195,12 +222,14 @@ function update(delta) {
 
     updateBirds(delta);
 
+    updateBoats(delta);
+
     //updating waves
     waveAnimation += 6*delta;
 
     //creating bubbles for narwhal
     if(narwhal.underwater) {
-        bubbleCounter += 0.01*delta;
+        bubbleCounter += 0.1*delta;
         if(bubbleCounter > 0.01) {
             bubbleCounter = 0.0;
             if(Math.random()*10 > 4) {
@@ -215,14 +244,29 @@ function update(delta) {
     }
 
     //creating new birds
-    birdCounter += 2*delta;
-    if(birdCounter > 0.5) {
+    birdCounter += 3*delta;
+    if(birdCounter > 0.3) {
         birdCounter = 0;
         if(Math.random()*10 > 4) {
-            console.log("New bird yo");
+            //console.log("New bird yo");
             for(var k = 0; k < numberOfBirds; k++) {
-                if(birds[k].alive == false) {
+                if(birds[k].alive == false && birds[k].recentlyDead == false) {
                     birds[k] = new bird(true, -gameHeight + gameHeight*Math.random());
+                    break;
+                }
+            }
+        }
+    }
+
+    //creating new boats
+    boatCounter += 0.5*delta;
+    if(boatCounter > 5) {
+        boatCounter = 0;
+        if(Math.random()*10 > 4) {
+            //console.log("New boat yo");
+            for(var k = 0; k < numberOfBoats; k++) {
+                if(boats[k].alive == false && boats[k].recentlyDead == false) {
+                    boats[k] = new boat(true);
                     break;
                 }
             }
@@ -239,8 +283,8 @@ function checkCollisions() {
             //xbounds
             if(narwhal.x + narwhal.width * (3.0/2.0) > birds[i].x - sideScrollX && narwhal.x - narwhal.width * (3.0/2.0) < birds[i].x - sideScrollX) {
                 //rough y bounds
-                if(narwhal.y + narwhal.height * (3.0/2.0) > birds[i].y - sideScrollY && narwhal.y - narwhal.height * (3.0/2.0) < birds[i].y - sideScrollY) {
-                    console.log("Collision fired");
+                if(narwhal.y + narwhal.height/2 > birds[i].y - sideScrollY && narwhal.y - narwhal.height/2 < birds[i].y - sideScrollY) {
+                    //console.log("Collision fired");
                     //fire collision
                     birds[i].alive = false;
                     birds[i].recentlyDead = true;
@@ -250,10 +294,40 @@ function checkCollisions() {
             }
         }
     }
+
+    //narwhal BOAT collision
+    for(var i = 0; i < numberOfBoats; i++) {
+        if(boats[i].alive) {
+            //xbounds
+            if(narwhal.x + narwhal.width > boats[i].x - sideScrollX && narwhal.x - narwhal.width < boats[i].x - sideScrollX) {
+                //rough y bounds
+                if(narwhal.y + narwhal.height * (3.0/2.0) > boats[i].y - sideScrollY && narwhal.y - narwhal.height * (3.0/2.0) < boats[i].y - sideScrollY) {
+                    //console.log("Collision fired");
+                    //fire collision
+                    boats[i].alive = false;
+                    boats[i].recentlyDead = true;
+                    hitBird();
+                    score += 500;
+
+                    if(narwhal.yVelo < 0) {
+                        narwhal.alive = false;
+                        for(var k = 0; k < numberOfBoats; k++) {
+                            if(!boats[k].alive && !boats[k].recentlyDead) {
+                                boats[k].recentlyDead = true;
+                                boats[k].x = narwhal.x;
+                                boats[k].y = narwhal.y;
+                                deadNarwhal = k;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 canvas.addEventListener('keydown', this.keyPressed , false);
-canvas.addEventListener('keyreleased', this.keyReleased , false);
+canvas.addEventListener('keyup', this.keyReleased , false);
 
 canvas.addEventListener('mousedown', this.mousePressed, false);
 canvas.addEventListener('mouseup', this.mouseReleased, false);

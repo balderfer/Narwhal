@@ -11,7 +11,7 @@ var bird = function (living, ypos) {
 
     this.speed = maxBirdSpeed * Math.random();
 
-    this.x = gameWidth + sideScrollX;
+    this.x = screenWidth + sideScrollX;
     this.y = ypos;
 
     this.alive = living;
@@ -22,10 +22,10 @@ function drawBirds() {
     //draw birds
     for(i = 0; i < numberOfBirds; i++) {
         if (birds[i].alive) {
-            ctx.drawImage(birdSpriteSheet, (parseInt(birds[i].animation%3))*75, 0, 75, 75, birds[i].x - sideScrollX, birds[i].y - sideScrollY , 75, 75);
+            ctx.drawImage(birdSpriteSheet, (parseInt(birds[i].animation%3))*birds[i].width, 0, birds[i].width, birds[i].height, birds[i].x - sideScrollX, birds[i].y - sideScrollY , birds[i].width, birds[i].height);
         }
         else if(birds[i].recentlyDead) {
-            ctx.drawImage(birdSpriteSheet, (parseInt(birds[i].deadAnimation%3)+2)*75, 0, 75, 75, birds[i].x - sideScrollX, birds[i].y - sideScrollY , 75, 75);
+            ctx.drawImage(birdSpriteSheet, (parseInt(birds[i].deadAnimation%3)+2)*birds[i].width, 0, birds[i].width, birds[i].height, birds[i].x - sideScrollX, birds[i].y - sideScrollY , birds[i].width, birds[i].height);
         }
     }
 }
@@ -45,11 +45,11 @@ var updateBirds = function(delta) {
             birds[i].x -= birds[i].speed*delta;
 
             birds[i].animation += 3*delta;
-            if(birds[i].x - sideScrollX < 0)
+            if(birds[i].x - sideScrollX < -birds[i].width)
                 birds[i].alive = false;
         }
         else if(birds[i].recentlyDead) {
-            birds[i].deadAnimation += 3*delta;
+            birds[i].deadAnimation += 6*delta;
             if(birds[i].deadAnimation > 3)
                 birds[i].recentlyDead = false;
         }
