@@ -1,55 +1,55 @@
-var canvas;
+var canvas = document.createElement("canvas");
 var ctx;
 
-var originalWidth = window.innerWidth;
-if (originalWidth < 800) {
-    originalWidth = 800;
-}
-var originalHeight = window.innerHeight;
-console.log(originalWidth + ', ' + originalHeight);
+var screenWidth = window.innerWidth;
+var screenHeight = window.innerHeight;
+console.log(screenWidth + ', ' + screenHeight);
 
-var gameWidth = originalWidth;
+var gameWidth = 1000;
 var gameHeight = 3200;
 var ratio = gameHeight/gameWidth;
 var inverseRatio = gameWidth/gameHeight;
-var scale = 1.2;//fb default: 1.08571428571
-var zoomOut = 1;
-var sideScrollX;
-var sideScrollY = 100;
-var initialRender = true;
-
-var narwhalAccel = 100;
-var narwhalVel = 50;
-
-var pressed = false;
-var underwater = false;
+var sideScrollX = 0;
+var sideScrollY = -gameHeight/8;
 
 var fps = 25;
 var lastTime;
 
-var play = true;
+var play = false;
 var paused = false;
 
 var waveCount;
 var waveMoveCount = 0;
 
 var mostPoints = 0;
-var dogeUnlocked = false;
-var cursorX = 0;
 
 //image variables
 var backgroundImage;
 var narwhalImage;
 var narwhalSwimming = [];
 
-var nsc = 0;
-var nscOther = true;
-
-//java script b weird
-var i = 0;
-var k = 0;
-
 var framecount = 0;
+
+var narwhal;
+
+function init() {
+    ctx = canvas.getContext("2d");
+
+    canvas.width = screenWidth;
+    canvas.height = screenHeight;
+
+    document.body.appendChild(canvas);
+
+    lastTime = Date.now();
+
+    loadImages();
+
+    reset_game();
+
+     narwhalSwimming[3].onload = function() {
+         start_game_loop();
+     };
+}
 
 function loadImages() {
     backgroundImage = new Image();
@@ -68,30 +68,21 @@ function loadImages() {
     waveImage.src = '../images/wave.png';
 }
 
-function init() {
-    canvas = document.createElement("canvas");
-    ctx = canvas.getContext("2d");
+function reset_game() {
+    play = false;
+    paused = false;
 
-    canvas.width = originalWidth;
-    canvas.height = originalHeight;
+    narwhal = new narwhalChar();
 
-    document.body.appendChild(canvas);
-
-    lastTime = Date.now();
-
-    loadImages();
-
-
-    start_game_loop();
-    // narwhalSpriteSheet.onload = function() {
-    // };
+    var sideScrollX = 0;
+    var sideScrollY = -gameHeight/8;
 }
 
 function start_game_loop() {
 
     setInterval(function () {
         game_loop();
-        console.log(framecount++);
+        //console.log(framecount++);
     }, fps);
 }
 
@@ -101,12 +92,11 @@ function game_loop() {
 
     var deltaTime = (currentTime - lastTime) / 1000;
 
-    render(deltaTime);
-
     if (play && !paused) {
         update(deltaTime);
     }
 
+    render(deltaTime);
 
     lastTime = currentTime;
 
@@ -118,29 +108,55 @@ function render(delta) {
 
     drawBackground();
 
+    drawNarwhal();
 
+    if(play == false || paused == true) {
+        ctx.font = ("26px 'Squada One'");
+        ctx.fillStyle = "rgb(63, 50, 50)";
+        ctx.fillText("Tap to play!", canvas.width/2 - 70, canvas.height/2 - 25);
+    }
+}
+
+function drawBackground() {
+    var skyGradient = ctx.createLinearGradient(0, -sideScrollY - gameHeight/2 + narwhal.y , 0, gameHeight/2 + sideScrollY + narwhal.y);
+
+    skyGradient.addColorStop(0.125,"#000015");
+    skyGradient.addColorStop(1,"#4EC8FF");
+
+    ctx.fillStyle = skyGradient;
+    ctx.fillRect(0, -sideScrollY - gameHeight/2 + narwhal.y, canvas.width, gameHeight/2 - sideScrollY + narwhal.y);
+
+    var oceanGradient = ctx.createLinearGradient(0, -sideScrollY + narwhal.y, 0, -sideScrollY + gameHeight/2);
+
+    oceanGradient.addColorStop(0,"#3D38FF");
+    oceanGradient.addColorStop(1,"#000027");
+
+    ctx.fillStyle = oceanGradient;
+    ctx.fillRect(0, -sideScrollY + narwhal.y, canvas.width, -sideScrollY + (gameHeight/2));
 }
 
 function update(delta) {
+    //console.log("Update the narwhal! It's y: "+ sideScrollY);
     updateNarwhal(delta);
 }
 
 
-window.addEventListener('keypress', this.keyPressed , false);
+canvas.addEventListener('keydown', this.keyPressed , false);
+canvas.addEventListener('keyreleased', this.keyReleased , false);
 
+canvas.addEventListener('mousedown', this.mousePressed, false);
+canvas.addEventListener('mouseup', this.mouseReleased, false);
 
 
 function keyPressed(e) {
     var key = e.keyCode;
     e.preventDefault();
 
-    if (underwater) {
-        console.log("Space pressed...");
-        narwhalAccel = 100;
-       
-        pressed = true;
-        window.removeEventListener('keypress', this.keyPressed , false);
-        window.addEventListener('keyup', this.keyReleased , false);
+    pressed = true;
+
+    if(play == false || paused == true) {
+        play = true;
+        paused = false;
     }
 }
 
@@ -148,90 +164,26 @@ function keyReleased(e) {
     var key = e.keyCode;
     e.preventDefault();
 
-    console.log("Space released");
-    if (underwater)
-        narwhalAccel = -200;
-    else
-        narwhalAccel = narwhalAccel;
     pressed = false;
-    window.removeEventListener('keyup', this.keyReleased , false);
-    window.addEventListener('keypress', this.keyPressed , false);
 }
 
-function drawBackground() {
-    var skyGradient = ctx.createLinearGradient(0, 0, 0, (canvas.height / 2));
 
-    skyGradient.addColorStop(0.125,"#000015");
-    skyGradient.addColorStop(1,"#3EC2FF");
+function mousePressed(e) {
+    var key = e.keyCode;
+    e.preventDefault();
 
-    ctx.fillStyle = skyGradient;
-    ctx.fillRect(0, 0, canvas.width, (canvas.height / 2));
+    pressed = true;
 
-    var oceanGradient = ctx.createLinearGradient(0, (canvas.height / 2), 0, canvas.height);
-
-    oceanGradient.addColorStop(0,"#3D38FF");
-    oceanGradient.addColorStop(1,"#000027");
-
-    ctx.fillStyle = oceanGradient;
-    ctx.fillRect(0, (canvas.height / 2), canvas.width, (canvas.height / 2));
-
-
-    waveCount = Math.round(canvas.width / 40) + 5;
-    
-    ctx.drawImage(waveImage, (0 - waveMoveCount), ((canvas.height / 2) - 20), 1520, 20);
-    waveMoveCount += 5;
-    if (waveMoveCount > 35)
-        waveMoveCount = 0;
-}
-
-function updateNarwhal(delta) {
-    if (initialRender) {
-        ctx.drawImage(narwhalImage, ((canvas.width / 4) - 95), (sideScrollY - 25), 190, 50);
-    }
-    else {
-        narwhalVel = narwhalVel + (narwhalAccel * delta);
-        // if (narwhalVel > 150) {
-        //     narwhalVel = 150;
-        // }
-        sideScrollY = sideScrollY + (narwhalVel * delta);
-
-        if (sideScrollY >= (canvas.height / 2)) {
-            if (!pressed)
-                narwhalAccel = -200;
-            if (!underwater)
-                narwhalVel *= 0.75;
-            underwater = true;
-        }
-        else {
-            underwater = false;
-            narwhalAccel = 200;
-        }
-
-        var x = (canvas.width / 4);
-        var y = sideScrollY;
-        var rx = (canvas.width / 2);
-        var ry = (canvas.height / 2);
-        var rad = (narwhalVel / 300) * 30;
-        ctx.translate(x, y);
-        ctx.rotate(rad*Math.PI/180);
-        if (underwater) {
-            ctx.drawImage(narwhalSwimming[nsc], -95, -25, 190, 50);
-            if (nscOther) {
-                nsc++;
-                if (nsc > 3) {
-                    nsc = 0;
-                }
-                nscOther = false;
-            }
-            else {
-                nscOther = true;
-            }
-        }
-        else {
-            ctx.drawImage(narwhalImage, -95, -25, 190, 50);
-        }
-        ctx.rotate(-rad*Math.PI/180);
-        ctx.translate(-x, -y);
+    if(play == false || paused == true) {
+        play = true;
+        paused = false;
     }
 }
 
+
+function mouseReleased(e) {
+    var key = e.keyCode;
+    e.preventDefault();
+
+    pressed = false;
+}
