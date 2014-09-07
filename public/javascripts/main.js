@@ -18,15 +18,14 @@ var lastTime;
 var play = false;
 var paused = false;
 
-var waveCount;
-var waveMoveCount = 0;
+var waveAnimation = 0;
+var waveSpriteSheet;
 
 var mostPoints = 0;
 
 //image variables
 var backgroundImage;
-var narwhalImage;
-var narwhalSwimming = [];
+var narwhalSpriteSheet;
 
 var framecount = 0;
 
@@ -46,26 +45,16 @@ function init() {
 
     reset_game();
 
-     narwhalSwimming[3].onload = function() {
+     narwhalSpriteSheet.onload = function() {
          start_game_loop();
      };
 }
 
 function loadImages() {
-    backgroundImage = new Image();
-    backgroundImage.src = '../images/background.png';
-    narwhalImage = new Image();
-    narwhalImage.src = '../images/narwhal.png';
-    narwhalSwimming[0] = new Image();
-    narwhalSwimming[0].src = '../images/narwhal1.png';
-    narwhalSwimming[1] = new Image();
-    narwhalSwimming[1].src = '../images/narwhal2.png';
-    narwhalSwimming[2] = new Image();
-    narwhalSwimming[2].src = '../images/narwhal3.png';
-    narwhalSwimming[3] = new Image();
-    narwhalSwimming[3].src = '../images/narwhal4.png';
-    waveImage = new Image();
-    waveImage.src = '../images/wave.png';
+    waveSpriteSheet = new Image();
+    waveSpriteSheet.src = '../images/waves.png';
+    narwhalSpriteSheet = new Image();
+    narwhalSpriteSheet.src = '../images/narwhal.png';
 }
 
 function reset_game() {
@@ -92,8 +81,10 @@ function game_loop() {
 
     var deltaTime = (currentTime - lastTime) / 1000;
 
-    if (play && !paused) {
+    if (play && !paused && deltaTime < 0.1) {
         update(deltaTime);
+
+
     }
 
     render(deltaTime);
@@ -103,7 +94,7 @@ function game_loop() {
     initialRender = false;
 }
 
-function render(delta) {
+function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     drawBackground();
@@ -113,31 +104,54 @@ function render(delta) {
     if(play == false || paused == true) {
         ctx.font = ("26px 'Squada One'");
         ctx.fillStyle = "rgb(63, 50, 50)";
-        ctx.fillText("Tap to play!", canvas.width/2 - 70, canvas.height/2 - 25);
+        ctx.fillText("Tap to play!", screenWidth/2 - 70, screenHeight/2 - 25);
     }
 }
 
 function drawBackground() {
+    var spaceGradient = ctx.createLinearGradient(0, -sideScrollY - gameHeight/2 + narwhal.y , 0, gameHeight/2 + sideScrollY + narwhal.y);
+
+    spaceGradient.addColorStop(0.125,"#000030");
+    spaceGradient.addColorStop(1,"#7ec0ee");
+
+    ctx.fillStyle = spaceGradient;
+    ctx.fillRect(0, -sideScrollY - gameHeight*2 + narwhal.y, screenWidth, gameHeight*2 - gameHeight/2 - sideScrollY + narwhal.y);
+
     var skyGradient = ctx.createLinearGradient(0, -sideScrollY - gameHeight/2 + narwhal.y , 0, gameHeight/2 + sideScrollY + narwhal.y);
 
-    skyGradient.addColorStop(0.125,"#000015");
-    skyGradient.addColorStop(1,"#4EC8FF");
+    skyGradient.addColorStop(0.125,"#7ec0ee");
+    skyGradient.addColorStop(1,"#ecf0f1");
 
     ctx.fillStyle = skyGradient;
-    ctx.fillRect(0, -sideScrollY - gameHeight/2 + narwhal.y, canvas.width, gameHeight/2 - sideScrollY + narwhal.y);
+    ctx.fillRect(0, -sideScrollY - gameHeight/2 + narwhal.y, screenWidth, gameHeight/2 - sideScrollY + narwhal.y);
 
     var oceanGradient = ctx.createLinearGradient(0, -sideScrollY + narwhal.y, 0, -sideScrollY + gameHeight/2);
 
-    oceanGradient.addColorStop(0,"#3D38FF");
-    oceanGradient.addColorStop(1,"#000027");
+    oceanGradient.addColorStop(0,"#2a7eb4");
+    oceanGradient.addColorStop(1,"#000037");
 
     ctx.fillStyle = oceanGradient;
-    ctx.fillRect(0, -sideScrollY + narwhal.y, canvas.width, -sideScrollY + (gameHeight/2));
+    ctx.fillRect(0, -sideScrollY + narwhal.y, screenWidth, -sideScrollY + (gameHeight/2));
+
+    var currentWaveAnimation = parseInt(waveAnimation);
+
+    //drawing waves
+    for(var i = 0; i < gameWidth/30;i++){
+        ctx.drawImage(waveSpriteSheet,((5-(currentWaveAnimation)%6))*15, 0, 15, 15, i*30, -sideScrollY + (narwhal.y) - 29 , 30, 30);
+    }
+    for(var i = 0; i < gameWidth/45;i++){
+        ctx.globalAlpha = 0.6;
+        ctx.drawImage(waveSpriteSheet,((5-(currentWaveAnimation+2)%6))*15, 0, 15, 15, i*45, -sideScrollY + (narwhal.y) - 44 , 45, 45);
+        ctx.globalAlpha = 1.0;
+    }
 }
 
 function update(delta) {
     //console.log("Update the narwhal! It's y: "+ sideScrollY);
     updateNarwhal(delta);
+
+    //updating waves
+    waveAnimation += 6*delta;
 }
 
 

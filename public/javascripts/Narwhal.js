@@ -3,15 +3,14 @@ const maxVelX = 200.0;
 const maxVelY = 200.0;
 
 var swimAnimation = 0;
-var swimAnimationOther = true;
 
 var pressed = false;
 
 var narwhalChar = function () {
     //for player size.
     this.scale = 1;
-    this.width = 120;
-    this.height = 30;
+    this.width = 180;
+    this.height = 60;
 
     this.xVelo = narwhalAccel;
     this.yVelo = 0.0;
@@ -27,7 +26,23 @@ var narwhalChar = function () {
 function drawNarwhal() {
     ctx.translate(narwhal.x, narwhal.y);
     ctx.rotate(narwhal.rotation*Math.PI/180);
-    ctx.drawImage(narwhalSwimming[swimAnimation], (-narwhal.width/2), (-narwhal.height/2), narwhal.width, narwhal.height);
+    //ctx.drawImage(narwhalSwimming[swimAnimation], (-narwhal.width/2), (-narwhal.height/2), narwhal.width, narwhal.height);
+    if(pressed && narwhal.yVelo > 0 && narwhal.underwater) {
+        ctx.globalAlpha = .8;
+        ctx.drawImage(narwhalSpriteSheet, (parseInt(swimAnimation%3))*60 + 1, 0, 60, 20, (-narwhal.width/2), (-narwhal.height/2), narwhal.width, narwhal.height);
+        ctx.globalAlpha = 1.0;
+    }
+    else if(narwhal.underwater) {
+        ctx.globalAlpha = .8;
+        ctx.drawImage(narwhalSpriteSheet, 61, 0, 60, 20, (-narwhal.width/2), (-narwhal.height/2), narwhal.width, narwhal.height);
+        ctx.globalAlpha = 1.0;
+    }
+    else {
+        if(swimAnimation%5 > 2)
+            ctx.drawImage(narwhalSpriteSheet, (parseInt(swimAnimation%5) - 2)*60 + 1, 20, 60, 20, (-narwhal.width/2), (-narwhal.height/2), narwhal.width, narwhal.height);
+        else
+            ctx.drawImage(narwhalSpriteSheet, (parseInt(swimAnimation%5))*60 + 1, 40, 60, 20, (-narwhal.width/2), (-narwhal.height/2), narwhal.width, narwhal.height);
+    }
     ctx.rotate(-narwhal.rotation*Math.PI/180);
     ctx.translate(-narwhal.x, -narwhal.y);
 }
@@ -69,7 +84,12 @@ function updateNarwhal(delta) {
     sideScrollX += narwhal.xVelo * delta;
     sideScrollY += narwhal.yVelo * delta;
 
-    if(narwhal.underwater) {
+    if(narwhal.underwater)
+        swimAnimation += 6*delta;
+    else
+        swimAnimation += 12*delta;
+
+    /*if(narwhal.underwater) {
         //update animation
         if (swimAnimationOther) {
             swimAnimation++;
@@ -81,5 +101,5 @@ function updateNarwhal(delta) {
         else {
             swimAnimationOther = true;
         }
-    }
+    }*/
 }
